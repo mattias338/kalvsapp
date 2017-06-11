@@ -1,42 +1,26 @@
 package com.example.banken.kalvsapp;
 
-import android.app.Fragment;
+import android.app.AlertDialog;
 import android.app.ListActivity;
-import android.app.LoaderManager;
-import android.content.Intent;
-import android.content.Loader;
-import android.database.Cursor;
+import android.content.DialogInterface;
 import android.os.Bundle;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ArrayAdapter;
-import android.widget.BaseAdapter;
-import android.widget.ListAdapter;
+import android.view.View;
 import android.widget.ListView;
-import android.widget.SimpleAdapter;
 
 import com.example.banken.kalvsapp.data.Activity;
+import com.example.banken.kalvsapp.data.AllTasksReadListener;
 import com.example.banken.kalvsapp.data.Database;
 import com.example.banken.kalvsapp.data.Entry;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 //public class MainActivity extends AppCompatActivity {
 public class MainActivity extends ListActivity implements ActivityPickerListener {
-    private static final Database database = new Database();
-    private BaseAdapter adapter;
-    private List<Map<String, String>> entriesForSimpleAdapter;
+    private Database database = new Database();
+    private SimpleAdapterManager simpleAdapterManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +29,6 @@ public class MainActivity extends ListActivity implements ActivityPickerListener
         setContentView(R.layout.activity_main);
 //        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
 //        setSupportActionBar(toolbar);
-
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -62,13 +45,21 @@ public class MainActivity extends ListActivity implements ActivityPickerListener
             }
         });
 
-        updateData();
+
+        simpleAdapterManager = new SimpleAdapterManager(this, database);
+        getListView().setAdapter(simpleAdapterManager.getAdapter());
+        database.readFromFile(this, new AllTasksReadListener() {
+            @Override
+            public void onReady() {
+                updateData(false);
+            }
+        });
     }
 
     protected void addData(Activity activity) {
         Date date = new Date();
         database.addEntry(new Entry(activity, date));
-        updateData();
+        updateData(true);
     }
 
     @Override
@@ -93,36 +84,10 @@ public class MainActivity extends ListActivity implements ActivityPickerListener
         return super.onOptionsItemSelected(item);
     }
 
-    private void updateData() {
-        String mapkey = "entry-string";
-        if (adapter == null) {
-            List<Entry> entries = database.getList();
-            entriesForSimpleAdapter = new ArrayList<>();
-            for (Entry entry : entries) {
-                Map<String, String> map = new HashMap<>();
-                map.put(mapkey, entry.toUiString(database));
-                entriesForSimpleAdapter.add(map);
-            }
-
-            adapter = new SimpleAdapter(this, entriesForSimpleAdapter, android.R.layout.simple_list_item_1,
-                    new String[]{mapkey}, new int[]{android.R.id.text1});
-
-//            adapter = new ArrayAdapter<>(this,
-//                    android.R.layout.simple_list_item_1, database.toArray() /*new String[]{"a", "b"}*/);
-            getListView().setAdapter(adapter);
-        } else {
-//            Entry entry = database.getList().get(database.getList().size() - 1);
-//            Map<String, String> map = new HashMap<>();
-//            map.put(mapkey, entry.toUiString(database));
-            List<Entry> entries = database.getList();
-            entriesForSimpleAdapter.clear();
-            for (Entry entry : entries) {
-                Map<String, String> map = new HashMap<>();
-                map.put(mapkey, entry.toUiString(database));
-                entriesForSimpleAdapter.add(map);
-            }
-//            entriesForSimpleAdapter.add(map);
-            adapter.notifyDataSetChanged();
+    private void updateData(boolean store) {
+        simpleAdapterManager.update();
+        if (store) {
+            database.storeToFile(this);
         }
     }
 
@@ -132,9 +97,21 @@ public class MainActivity extends ListActivity implements ActivityPickerListener
     }
 
     @Override
-    protected void onListItemClick(ListView l, View v, int position, long id) {
+    protected void onListItemClick(ListView l, View v, final int position, long id) {
         super.onListItemClick(l, v, position, id);
-        database.removeEntry(position);
-        updateData();
+        Entry entry = database.getEntry(position);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Delete entry?")
+                .setMessage("Do you really want to delete " + entry.toString() + "?")
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        database.removeEntry(position);
+                        updateData(true);
+                    }
+                })
+                .setNegativeButton(android.R.string.no, null).show();
     }
 }

@@ -1,10 +1,12 @@
 package com.example.banken.kalvsapp.data;
 
-import java.util.Calendar;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
 public class Entry {
+    private static final DateFormat DATE_FORMAT = new SimpleDateFormat("MMM dd, hh:mm");
     private final Activity activity;
     private final Date date;
 
@@ -57,7 +59,7 @@ public class Entry {
 
     @Override
     public String toString() {
-        return "" + date + ": " + activity;
+        return "" + DATE_FORMAT.format(date) + ": " + activity;
     }
 
     public String toUiString(Database database) {
@@ -67,7 +69,7 @@ public class Entry {
                 int thisIndex = list.indexOf(this);
                 for (int i = thisIndex; i >= 0; i--) {
                     Entry entry = list.get(i);
-                    if (entry.activity == Activity.FALL_SLEEP) {
+                    if (entry.activity == Activity.FALL_ASLEEP) {
                         long diffMillis = date.getTime() - entry.date.getTime();
                         long diffMinutes = diffMillis / (60 * 1000);
                         String ret = ". Slept for ";
@@ -87,7 +89,7 @@ public class Entry {
 
     public static void main(String[] args) {
         Date date = new Date();
-        Activity activity = Activity.EAT_BOTH_SIDES;
+        Activity activity = Activity.EAT_ONE_SIDE;
 
         Entry entry = new Entry(activity, date);
         String s = entry.toPersistentString();

@@ -4,9 +4,11 @@ public enum Activity {
     BIG_POOP,
     SMALL_POOP,
     EAT_ONE_SIDE,
-    EAT_BOTH_SIDES,
-    FALL_SLEEP,
-    WAKE_UP
+    FALL_ASLEEP,
+    WAKE_UP,
+    KO_HAND_EXERCISE,
+    KALV_BACK_OF_NECK_EXERCISE
+
     ;
 
     public static String[] toStringArray() {
