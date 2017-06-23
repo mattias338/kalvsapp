@@ -10,20 +10,25 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import static android.content.ContentValues.TAG;
 
 public class Database {
     private static final String FILENAME = "kalvsapp-data";
     private static final byte[] LINE_BREAK = System.getProperty("line.separator").getBytes();
-    private List<Entry> entries = new ArrayList<>();
+    private final List<Entry> entries = new ArrayList<>();
+    private final List<String> textRepresentation = new ArrayList<>();
+    private Set<Activity> visibleActivities;
 
     public Database() {
     }
 
     public void addEntry(Entry e) {
         entries.add(e);
+        updateTextRepresentation();
     }
 
     public Entry[] toArray() {
@@ -45,6 +50,7 @@ public class Database {
 
     public void removeEntry(int position) {
         entries.remove(entries.size() - 1 - position);
+        updateTextRepresentation();
     }
 
     public void storeToFile(final Context context) {
@@ -101,5 +107,37 @@ public class Database {
 
     public Entry getEntry(int position) {
         return entries.get(entries.size() - 1 - position);
+    }
+
+    public List<String> getTextRepresentation() {
+        return textRepresentation;
+    }
+
+    private void updateTextRepresentation() {
+        textRepresentation.clear();
+        for (Entry entry : entries) {
+            if (visibleActivities == null || visibleActivities.contains(entry.getActivity())) {
+                textRepresentation.add(entry.toUiString(this));
+            }
+        }
+    }
+
+    public void deleteOlderThan(int numberOfDays) {
+        long now = System.currentTimeMillis();
+        long maxDiff = numberOfDays * 24 * 60 * 60 * 1000;
+
+        Iterator<Entry> iterator = entries.iterator();
+        while (iterator.hasNext()) {
+            Entry entry = iterator.next();
+            if (now - entry.getDate().getTime() > maxDiff) {
+                iterator.remove();
+            }
+        }
+        updateTextRepresentation();
+    }
+
+    public void setVisibleActivities(Set<Activity> visibleActivities) {
+        this.visibleActivities = visibleActivities;
+        updateTextRepresentation();
     }
 }

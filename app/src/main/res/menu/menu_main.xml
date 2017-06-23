@@ -7,4 +7,14 @@
         android:orderInCategory="100"
         android:title="@string/action_settings"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/filter_data"
+        android:orderInCategory="90"
+        android:title="@string/filter_data"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/delete_old_ata"
+        android:orderInCategory="80"
+        android:title="@string/delete_old_data"
+        app:showAsAction="never" />
 </menu>

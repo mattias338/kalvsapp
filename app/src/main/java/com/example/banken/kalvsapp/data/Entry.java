@@ -6,7 +6,7 @@ import java.util.Date;
 import java.util.List;
 
 public class Entry {
-    private static final DateFormat DATE_FORMAT = new SimpleDateFormat("MMM dd, hh:mm");
+    private static final DateFormat DATE_FORMAT = new SimpleDateFormat("MMM dd, HH:mm");
     private final Activity activity;
     private final Date date;
 
