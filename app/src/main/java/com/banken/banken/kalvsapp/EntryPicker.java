@@ -1,16 +1,13 @@
-package com.example.banken.kalvsapp;
+package com.banken.banken.kalvsapp;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
-import android.view.View;
 
-import com.example.banken.kalvsapp.data.Activity;
+import com.banken.banken.kalvsapp.data.Activity;
 
 public class EntryPicker extends DialogFragment {
     private ActivityPickerListener activityPickerListener;

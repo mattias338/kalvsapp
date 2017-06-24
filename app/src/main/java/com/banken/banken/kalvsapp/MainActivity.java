@@ -1,32 +1,39 @@
-package com.example.banken.kalvsapp;
+package com.banken.banken.kalvsapp;
 
 import android.app.AlertDialog;
+import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.DatePicker;
 import android.widget.ListView;
 import android.widget.NumberPicker;
+import android.widget.TimePicker;
 
-import com.example.banken.kalvsapp.data.Activity;
-import com.example.banken.kalvsapp.data.AllTasksReadListener;
-import com.example.banken.kalvsapp.data.Database;
-import com.example.banken.kalvsapp.data.Entry;
+import com.banken.banken.kalvsapp.data.Activity;
+import com.banken.banken.kalvsapp.data.AllTasksReadListener;
+import com.banken.banken.kalvsapp.data.Database;
+import com.banken.banken.kalvsapp.data.Entry;
 
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
     private Database database = new Database();
     private ArrayAdapter<String> arrayAdapter;
+    private final List<String> textRepresentation = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,25 +63,77 @@ public class MainActivity extends AppCompatActivity {
 
         ListView listView = (ListView) findViewById(android.R.id.list);
         arrayAdapter =
-                new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, database.getTextRepresentation());
+                new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, textRepresentation);
         listView.setAdapter(arrayAdapter);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
-                Entry entry = database.getEntry(position);
+                final Entry entry = database.getVisibleEntry(position);
 
-                new AlertDialog.Builder(MainActivity.this)
-                        .setTitle("Delete entry?")
-                        .setMessage("Do you really want to delete " + entry.toString() + "?")
-                        .setIcon(android.R.drawable.ic_dialog_alert)
-                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
 
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                                database.removeEntry(position);
-                                updateData(true);
+                new AlertDialog.Builder(MainActivity.this).
+                        setTitle("Edit entry").
+                        setItems(new String[]{"Edit date", "Edit time", "Delete"}, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                if (which == 0) {
+                                    final Date date = entry.getDate();
+                                    final Calendar calendar = Calendar.getInstance();
+                                    calendar.setTime(date);
+                                    int year = calendar.get(Calendar.YEAR);
+                                    int month = calendar.get(Calendar.MONTH);
+                                    int dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH);
+                                    DatePickerDialog datePickerDialog = new DatePickerDialog(MainActivity.this, new DatePickerDialog.OnDateSetListener() {
+                                        @Override
+                                        public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
+                                            calendar.set(year, month, dayOfMonth);
+                                            Entry newEntry = entry.newEntry(calendar.getTime());
+                                            database.removeEntry(entry);
+                                            database.addEntry(newEntry);
+                                            updateData(true);
+                                        }
+                                    }, year, month, dayOfMonth);
+                                    datePickerDialog.show();
+
+                                }
+                                if (which == 1) {
+                                    final Date date = entry.getDate();
+                                    final Calendar calendar = Calendar.getInstance();
+                                    calendar.setTime(date);
+                                    final int hour = calendar.get(Calendar.HOUR);
+                                    int minute = calendar.get(Calendar.MINUTE);
+
+                                    TimePickerDialog timePickerDialog = new TimePickerDialog(MainActivity.this, new TimePickerDialog.OnTimeSetListener() {
+                                        @Override
+                                        public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                                            calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH), hourOfDay, minute);
+                                            Entry newEntry = entry.newEntry(calendar.getTime());
+                                            database.removeEntry(entry);
+                                            database.addEntry(newEntry);
+                                            updateData(true);
+                                        }
+                                    }, hour, minute, true);
+                                    timePickerDialog.show();
+
+                                }
+                                if (which == 2) {
+                                    new AlertDialog.Builder(MainActivity.this)
+                                            .setTitle("Delete entry?")
+                                            .setMessage("Do you really want to delete " + entry.toString() + "?")
+                                            .setIcon(android.R.drawable.ic_dialog_alert)
+                                            .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+
+                                                public void onClick(DialogInterface dialog, int whichButton) {
+                                                    database.removeEntry(entry);
+                                                    updateData(true);
+                                                }
+                                            })
+                                            .setNegativeButton(android.R.string.no, null).show();
+
+                                }
                             }
-                        })
-                        .setNegativeButton(android.R.string.no, null).show();
+                        }).show();
+
             }
         });
 
@@ -127,7 +186,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (id == R.id.filter_data) {
             Set<Activity> activities = new HashSet<>();
-            for (Entry entry : database.getList()) {
+            for (Entry entry : database.getEntries()) {
                 activities.add(entry.getActivity());
             }
             final String[] activitiesArray = new String[activities.size()];
@@ -180,12 +239,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void deleteData(int which) {
-        Log.d("d", "delete data " + which);
+//        Log.d("d", "delete data " + which);
         database.deleteOlderThan(which);
         updateData(true);
     }
 
     private void updateData(boolean store) {
+        textRepresentation.clear();
+        for (Entry entry : database.getVisibleEntries()) {
+            textRepresentation.add(entry.toUiString(database));
+        }
+
         arrayAdapter.notifyDataSetChanged();
         if (store) {
             database.storeToFile(this);

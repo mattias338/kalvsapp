@@ -1,4 +1,4 @@
-package com.example.banken.kalvsapp.data;
+package com.banken.banken.kalvsapp.data;
 
 public enum Activity {
     BIG_POOP,

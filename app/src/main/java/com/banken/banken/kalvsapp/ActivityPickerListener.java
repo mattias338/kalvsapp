@@ -1,6 +1,6 @@
-package com.example.banken.kalvsapp;
+package com.banken.banken.kalvsapp;
 
-import com.example.banken.kalvsapp.data.Activity;
+import com.banken.banken.kalvsapp.data.Activity;
 
 public interface ActivityPickerListener {
     void onPickedActivity(Activity activity);

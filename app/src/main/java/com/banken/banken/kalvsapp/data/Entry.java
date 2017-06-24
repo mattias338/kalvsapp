@@ -1,4 +1,4 @@
-package com.example.banken.kalvsapp.data;
+package com.banken.banken.kalvsapp.data;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -13,6 +13,10 @@ public class Entry {
     public Entry(Activity activity, Date date) {
         this.activity = activity;
         this.date = date;
+    }
+
+    public Entry newEntry(Date date) {
+        return new Entry(activity, date);
     }
 
     public Activity getActivity() {
@@ -65,9 +69,9 @@ public class Entry {
     public String toUiString(Database database) {
         switch (activity) {
             case WAKE_UP :
-                List<Entry> list = database.getList();
+                List<Entry> list = database.getEntries();
                 int thisIndex = list.indexOf(this);
-                for (int i = thisIndex; i >= 0; i--) {
+                for (int i = thisIndex; i < list.size(); i++) {
                     Entry entry = list.get(i);
                     if (entry.activity == Activity.FALL_ASLEEP) {
                         long diffMillis = date.getTime() - entry.date.getTime();

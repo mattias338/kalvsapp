@@ -1,8 +1,7 @@
-package com.example.banken.kalvsapp.data;
+package com.banken.banken.kalvsapp.data;
 
 import android.content.Context;
 import android.os.AsyncTask;
-import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -10,17 +9,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
-import static android.content.ContentValues.TAG;
 
 public class Database {
     private static final String FILENAME = "kalvsapp-data";
     private static final byte[] LINE_BREAK = System.getProperty("line.separator").getBytes();
     private final List<Entry> entries = new ArrayList<>();
-    private final List<String> textRepresentation = new ArrayList<>();
     private Set<Activity> visibleActivities;
 
     public Database() {
@@ -28,7 +26,12 @@ public class Database {
 
     public void addEntry(Entry e) {
         entries.add(e);
-        updateTextRepresentation();
+        Collections.sort(entries, new Comparator<Entry>() {
+            @Override
+            public int compare(Entry o1, Entry o2) {
+                return -o1.getDate().compareTo(o2.getDate());
+            }
+        });
     }
 
     public Entry[] toArray() {
@@ -44,13 +47,26 @@ public class Database {
         return strings;
     }
 
-    public List<Entry> getList() {
+    public List<Entry> getEntries() {
         return entries;
     }
 
+    public List<Entry> getVisibleEntries() {
+        List<Entry> visibleEntries = new ArrayList<>();
+        for (Entry entry : entries) {
+            if (visibleActivities == null || visibleActivities.contains(entry.getActivity())) {
+                visibleEntries.add(entry);
+            }
+        }
+        return visibleEntries;
+    }
+
     public void removeEntry(int position) {
-        entries.remove(entries.size() - 1 - position);
-        updateTextRepresentation();
+        entries.remove(position);
+    }
+
+    public void removeEntry(Entry entry) {
+        removeEntry(entries.indexOf(entry));
     }
 
     public void storeToFile(final Context context) {
@@ -60,15 +76,15 @@ public class Database {
                 Database database = params[0];
                 try (FileOutputStream fileOutputStream =
                              context.openFileOutput(FILENAME, Context.MODE_PRIVATE)) {
-                    for (Entry entry : database.getList()) {
+                    for (Entry entry : database.getEntries()) {
                         fileOutputStream.write(entry.toPersistentString().getBytes());
                         fileOutputStream.write(LINE_BREAK);
                     }
                     fileOutputStream.flush();
                 } catch (FileNotFoundException e) {
-                    Log.e(TAG, "doInBackground: File not found", e);
+//                    Log.e(TAG, "doInBackground: File not found", e);
                 } catch (IOException e) {
-                    Log.e(TAG, "doInBackground: IO exception", e);
+//                    Log.e(TAG, "doInBackground: IO exception", e);
                 }
                 return null;
             }
@@ -90,9 +106,9 @@ public class Database {
                         database.addEntry(Entry.fromPersistentString(entryLine));
                     }
                 } catch (FileNotFoundException e) {
-                    Log.e(TAG, "doInBackground: File not found", e);
+//                    Log.e(TAG, "doInBackground: File not found", e);
                 } catch (IOException e) {
-                    Log.e(TAG, "doInBackground: IO exception", e);
+//                    Log.e(TAG, "doInBackground: IO exception", e);
                 }
                 return null;
             }
@@ -106,20 +122,23 @@ public class Database {
     }
 
     public Entry getEntry(int position) {
-        return entries.get(entries.size() - 1 - position);
+        return entries.get(position);
     }
 
-    public List<String> getTextRepresentation() {
-        return textRepresentation;
-    }
-
-    private void updateTextRepresentation() {
-        textRepresentation.clear();
-        for (Entry entry : entries) {
-            if (visibleActivities == null || visibleActivities.contains(entry.getActivity())) {
-                textRepresentation.add(entry.toUiString(this));
+    public Entry getVisibleEntry(int position) {
+        if (visibleActivities == null) {
+            return getEntry(position);
+        } else {
+            for (Entry entry : entries) {
+                if (visibleActivities.contains(entry.getActivity())) {
+                    if (position == 0) {
+                        return entry;
+                    }
+                    position--;
+                }
             }
         }
+        throw new RuntimeException("Terrible state...");
     }
 
     public void deleteOlderThan(int numberOfDays) {
@@ -133,11 +152,9 @@ public class Database {
                 iterator.remove();
             }
         }
-        updateTextRepresentation();
     }
 
     public void setVisibleActivities(Set<Activity> visibleActivities) {
         this.visibleActivities = visibleActivities;
-        updateTextRepresentation();
     }
 }

@@ -1,4 +1,4 @@
-package com.example.banken.kalvsapp;
+package com.banken.banken.kalvsapp;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
