@@ -4,6 +4,8 @@ public enum Activity {
     BIG_POOP,
     SMALL_POOP,
     EAT_ONE_SIDE,
+    EAT_FOOD,
+    EAT_FRUIT,
     FALL_ASLEEP,
     WAKE_UP,
     KO_HAND_EXERCISE,
